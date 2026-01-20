@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "plugins": {
+    "csharp-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/daniel.liu/.claude/plugins/cache/claude-plugins-official/csharp-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-12T00:27:32.610Z",
+        "lastUpdated": "2026-01-12T00:27:32.610Z"
+      }
+    ]
+  }
+}

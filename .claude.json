@@ -1,0 +1,836 @@
+{
+  "numStartups": 57,
+  "installMethod": "native",
+  "autoUpdates": false,
+  "verbose": true,
+  "autoCompactEnabled": false,
+  "hasSeenTasksHint": true,
+  "tipsHistory": {
+    "new-user-warmup": 6,
+    "plan-mode-for-complex-tasks": 12,
+    "memory-command": 48,
+    "theme-command": 44,
+    "status-line": 57,
+    "stickers-command": 44,
+    "prompt-queue": 17,
+    "enter-to-steer-in-relatime": 44,
+    "todo-list": 44,
+    "ide-upsell-external-terminal": 57,
+    "install-github-app": 50,
+    "install-slack-app": 53,
+    "drag-and-drop-images": 52,
+    "paste-images-mac": 52,
+    "double-esc-code-restore": 52,
+    "continue": 52,
+    "shift-tab": 52,
+    "image-paste": 45,
+    "config-thinking-mode": 12,
+    "ultrathink-keyword": 40,
+    "desktop-app": 43,
+    "web-app": 43,
+    "mobile-app": 43,
+    "shift-enter": 50,
+    "custom-agents": 57,
+    "btw-side-question": 7,
+    "permissions": 52,
+    "rename-conversation": 43,
+    "custom-commands": 43,
+    "default-permission-mode-config": 50,
+    "# for memory": 40,
+    "tab-toggle-thinking": 40,
+    "guest-passes": 47,
+    "frontend-design-plugin": 47,
+    "terminal-setup": 46,
+    "git-worktrees": 52
+  },
+  "promptQueueUseCount": 30,
+  "showExpandedTodos": true,
+  "cachedStatsigGates": {
+    "tengu_log_1p_events": true,
+    "tengu_disable_bypass_permissions_mode": false,
+    "code_slack_app_install_banner": false,
+    "tengu_tool_pear": false,
+    "tengu_thinkback": false,
+    "tengu_sumi": true,
+    "tengu_react_vulnerability_warning": false,
+    "tengu_c4w_usage_limit_notifications_enabled": true,
+    "tengu_prompt_suggestion": false,
+    "tengu_ant_attribution_header_new": true,
+    "tengu_year_end_2025_campaign_promo": false,
+    "tengu_streaming_tool_execution2": false,
+    "tengu_session_memory": false,
+    "tengu_enable_versioned_plugins": false,
+    "tengu_backstage_only": false,
+    "tengu_web_tasks": false,
+    "tengu_show_extra_usage_bar": true
+  },
+  "cachedDynamicConfigs": {
+    "tengu_1p_event_batch_config": {
+      "scheduledDelayMillis": 5000,
+      "maxExportBatchSize": 200,
+      "maxQueueSize": 8192
+    },
+    "tengu-top-of-feed-tip": {
+      "tip": "",
+      "color": "dim"
+    }
+  },
+  "cachedGrowthBookFeatures": {
+    "strawberry_granite_flag": "N/A",
+    "persimmon_marble_flag": "N/A",
+    "tengu_accept_with_feedback": true,
+    "tengu_pid_based_version_locking": true,
+    "tengu_mcp_tool_search": true,
+    "tengu_disable_bypass_permissions_mode": false,
+    "tengu_tool_pear": false,
+    "tengu_c4w_usage_limit_notifications_enabled": true,
+    "tengu_thinkback": false,
+    "tengu_sumi": true,
+    "tengu_react_vulnerability_warning": false,
+    "tengu_ant_attribution_header_new": true,
+    "tengu_1p_event_batch_config": {
+      "scheduledDelayMillis": 5000,
+      "maxExportBatchSize": 200,
+      "maxQueueSize": 8192
+    },
+    "tengu_event_sampling_config": {},
+    "tengu-top-of-feed-tip": {
+      "tip": "",
+      "color": ""
+    },
+    "tengu_tool_search_unsupported_models": null,
+    "tengu_scratch": false,
+    "tengu_log_segment_events": false,
+    "tengu_log_datadog_events": true,
+    "tengu_post_compact_survey": false,
+    "tengu_streaming_tool_execution2": false,
+    "tengu_permission_explainer": false,
+    "tengu_code_diff_cli": true,
+    "enhanced_telemetry_beta": false,
+    "tengu_prompt_suggestion": true,
+    "tengu_bash_haiku_prefetch": true
+  },
+  "hasSeenStashHint": true,
+  "userID": "c784a1d120167f2e8f9989ca0e6c0abec434caa46168848fd40f352ed1ef69cf",
+  "firstStartTime": "2025-12-17T03:47:26.996Z",
+  "sonnet45MigrationComplete": true,
+  "opus45MigrationComplete": true,
+  "changelogLastFetched": 1768801101232,
+  "officialMarketplaceAutoInstallAttempted": true,
+  "officialMarketplaceAutoInstalled": true,
+  "oauthAccount": {
+    "accountUuid": "6fc57e19-db22-4926-933a-7feedbe8f691",
+    "emailAddress": "daniel.liu@cargroup.com",
+    "organizationUuid": "0db45292-4a2c-439d-aa17-42c955de84ca",
+    "hasExtraUsageEnabled": false,
+    "displayName": "Daniel",
+    "organizationRole": "admin",
+    "workspaceRole": null,
+    "organizationName": "daniel.liu@cargroup.com's Organization"
+  },
+  "claudeCodeFirstTokenDate": "2025-08-14T04:19:39.524080Z",
+  "appleTerminalSetupInProgress": false,
+  "appleTerminalBackupPath": "/Users/daniel.liu/Library/Preferences/com.apple.Terminal.plist.bak",
+  "optionAsMetaKeyInstalled": true,
+  "hasCompletedOnboarding": true,
+  "lastOnboardingVersion": "2.0.69",
+  "projects": {
+    "/Users/daniel.liu/work/HorizonAnalysis": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 2,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.006818000000000001,
+      "lastAPIDuration": 10890,
+      "lastAPIDurationWithoutRetries": 6154,
+      "lastToolDuration": 0,
+      "lastDuration": 11129,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 1684,
+      "lastTotalOutputTokens": 322,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 777,
+          "outputTokens": 151,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001532
+        },
+        "claude-sonnet-4-5-20250929": {
+          "inputTokens": 907,
+          "outputTokens": 171,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.005286000000000001
+        }
+      },
+      "lastSessionId": "e59c9152-d8ff-4c27-a91b-8f554b7fa211"
+    },
+    "/Users/daniel.liu/work/Csn-Internal-Dto": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "exampleFiles": [
+        "Media.cs",
+        "Customer.cs",
+        "Lead.cs",
+        "Offer.cs",
+        "OwnerReview.cs"
+      ],
+      "exampleFilesGeneratedAt": 1766012701675
+    },
+    "/Users/daniel.liu/work/py/BoatmartStuff": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.15101355000000002,
+      "lastAPIDuration": 81330,
+      "lastAPIDurationWithoutRetries": 81325,
+      "lastToolDuration": 1047,
+      "lastDuration": 1053551,
+      "lastLinesAdded": 92,
+      "lastLinesRemoved": 11,
+      "lastTotalInputTokens": 3964,
+      "lastTotalOutputTokens": 3439,
+      "lastTotalCacheCreationInputTokens": 11135,
+      "lastTotalCacheReadInputTokens": 181241,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 2986,
+          "outputTokens": 262,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.004296
+        },
+        "claude-sonnet-4-5-20250929": {
+          "inputTokens": 978,
+          "outputTokens": 3177,
+          "cacheReadInputTokens": 181241,
+          "cacheCreationInputTokens": 11135,
+          "webSearchRequests": 0,
+          "costUSD": 0.14671755
+        }
+      },
+      "lastSessionId": "ad4d3dba-c0b0-42ba-b8e1-d30e4a18eee6"
+    },
+    "/Users/daniel.liu/work/ssh": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.006542000000000001,
+      "lastAPIDuration": 7501,
+      "lastAPIDurationWithoutRetries": 7496,
+      "lastToolDuration": 0,
+      "lastDuration": 20901,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 1676,
+      "lastTotalOutputTokens": 274,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 773,
+          "outputTokens": 105,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0012980000000000001
+        },
+        "claude-sonnet-4-5-20250929": {
+          "inputTokens": 903,
+          "outputTokens": 169,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.005244
+        }
+      },
+      "lastSessionId": "8ea31e1d-4ad2-4088-b45c-40525c8e5e33"
+    },
+    "/Users/daniel.liu/work": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.001296,
+      "lastAPIDuration": 3535,
+      "lastAPIDurationWithoutRetries": 2077,
+      "lastToolDuration": 0,
+      "lastDuration": 8729,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 771,
+      "lastTotalOutputTokens": 105,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 771,
+          "outputTokens": 105,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001296
+        }
+      },
+      "lastSessionId": "2d0ea47e-169c-4ab1-a6ec-f0a18543cc14"
+    },
+    "/Users/daniel.liu/work/xray-tray": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 9.727913500000005,
+      "lastAPIDuration": 1073598,
+      "lastAPIDurationWithoutRetries": 1073533,
+      "lastToolDuration": 44067,
+      "lastDuration": 7975185,
+      "lastLinesAdded": 1702,
+      "lastLinesRemoved": 67,
+      "lastTotalInputTokens": 37094,
+      "lastTotalOutputTokens": 59264,
+      "lastTotalCacheCreationInputTokens": 571974,
+      "lastTotalCacheReadInputTokens": 9317396,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 35062,
+          "outputTokens": 1433,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.042226999999999994
+        },
+        "claude-sonnet-4-5-20250929": {
+          "inputTokens": 907,
+          "outputTokens": 197,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0056760000000000005
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 1125,
+          "outputTokens": 57634,
+          "cacheReadInputTokens": 9317396,
+          "cacheCreationInputTokens": 571974,
+          "webSearchRequests": 0,
+          "costUSD": 9.680010500000002
+        }
+      },
+      "lastSessionId": "e88b513d-260d-4d9a-9c83-0c1f307cec8d"
+    },
+    "/Users/daniel.liu/work/dataservice": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 4,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "Program.cs",
+        "FilterConfiguration.cs",
+        "SearchResponse.cs",
+        "SearchController.cs",
+        "SearchService.cs"
+      ],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "exampleFilesGeneratedAt": 1768784297504,
+      "lastAPIDurationWithoutRetries": 109840,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 8756,
+          "outputTokens": 240,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.009956000000000001
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 20329,
+          "outputTokens": 4193,
+          "cacheReadInputTokens": 1142640,
+          "cacheCreationInputTokens": 163739,
+          "webSearchRequests": 0,
+          "costUSD": 1.8011587499999997
+        }
+      },
+      "hasCompletedProjectOnboarding": true,
+      "lastCost": 1.8111147499999998,
+      "lastAPIDuration": 109845,
+      "lastToolDuration": 12856,
+      "lastDuration": 15844848,
+      "lastLinesAdded": 87,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 29085,
+      "lastTotalOutputTokens": 4433,
+      "lastTotalCacheCreationInputTokens": 163739,
+      "lastTotalCacheReadInputTokens": 1142640,
+      "lastSessionId": "0551fb18-ce08-415a-b399-ba3cd31a0a67"
+    },
+    "/Users/daniel.liu/Downloads/configs": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.22872725,
+      "lastAPIDuration": 122776,
+      "lastAPIDurationWithoutRetries": 122768,
+      "lastToolDuration": 62618145,
+      "lastDuration": 62766331,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 26366,
+      "lastTotalOutputTokens": 9172,
+      "lastTotalCacheCreationInputTokens": 45187,
+      "lastTotalCacheReadInputTokens": 500807,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 26355,
+          "outputTokens": 8693,
+          "cacheReadInputTokens": 468300,
+          "cacheCreationInputTokens": 39725,
+          "webSearchRequests": 0,
+          "costUSD": 0.16630625000000002
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 11,
+          "outputTokens": 479,
+          "cacheReadInputTokens": 32507,
+          "cacheCreationInputTokens": 5462,
+          "webSearchRequests": 0,
+          "costUSD": 0.062421000000000004
+        }
+      },
+      "lastSessionId": "28e27ff1-76f8-4033-ae5f-18e6389a3a19"
+    },
+    "/Users/daniel.liu/work/webmotors.pandora": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "SearchEndpoints.cs",
+        "SearchService.cs",
+        "TranslateService.cs",
+        "ecs-hml.groovy",
+        "OpenSearchRepository.cs"
+      ],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "exampleFilesGeneratedAt": 1768781676714,
+      "lastCost": 6.8166184,
+      "lastAPIDuration": 1667010,
+      "lastAPIDurationWithoutRetries": 1665894,
+      "lastToolDuration": 641259,
+      "lastDuration": 79676336,
+      "lastLinesAdded": 4469,
+      "lastLinesRemoved": 16,
+      "lastTotalInputTokens": 203050,
+      "lastTotalOutputTokens": 114296,
+      "lastTotalCacheCreationInputTokens": 713674,
+      "lastTotalCacheReadInputTokens": 7279319,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 197578,
+          "outputTokens": 51005,
+          "cacheReadInputTokens": 5005554,
+          "cacheCreationInputTokens": 268704,
+          "webSearchRequests": 0,
+          "costUSD": 1.2890383999999995
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 5472,
+          "outputTokens": 63291,
+          "cacheReadInputTokens": 2273765,
+          "cacheCreationInputTokens": 444970,
+          "webSearchRequests": 0,
+          "costUSD": 5.5275799999999995
+        }
+      },
+      "lastSessionId": "85d7bed3-0462-43b3-8ac2-9d95d189e2ea"
+    },
+    "/Users/daniel.liu/work/guideline": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 1.1601915,
+      "lastAPIDuration": 313901,
+      "lastAPIDurationWithoutRetries": 313900,
+      "lastToolDuration": 129066,
+      "lastDuration": 2509256,
+      "lastLinesAdded": 524,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 49066,
+      "lastTotalOutputTokens": 13368,
+      "lastTotalCacheCreationInputTokens": 106206,
+      "lastTotalCacheReadInputTokens": 125388,
+      "lastTotalWebSearchRequests": 4,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 38035,
+          "outputTokens": 1684,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.046454999999999996
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 11031,
+          "outputTokens": 11684,
+          "cacheReadInputTokens": 125388,
+          "cacheCreationInputTokens": 106206,
+          "webSearchRequests": 4,
+          "costUSD": 1.1137365
+        }
+      },
+      "lastSessionId": "5374e29e-f146-4c84-add0-25845143092c"
+    },
+    "/Users/daniel.liu/.claude-worktrees/opensearch/laughing-black": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "Program.cs",
+        "SearchController.cs",
+        "FilterConfiguration.cs",
+        "SearchService.cs",
+        "SearchResponse.cs"
+      ],
+      "exampleFilesGeneratedAt": 1768792056053
+    },
+    "/Users/daniel.liu/work/knowledge-bot": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0.001286,
+      "lastAPIDuration": 2675,
+      "lastAPIDurationWithoutRetries": 2675,
+      "lastToolDuration": 0,
+      "lastDuration": 6617,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 1126,
+      "lastTotalOutputTokens": 32,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1126,
+          "outputTokens": 32,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001286
+        }
+      },
+      "lastSessionId": "d0d5fbf4-b08e-4dc3-86dd-3527ac28b00a"
+    },
+    "/Users/daniel.liu/work/tools/pa": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "lastCost": 0,
+      "lastAPIDuration": 0,
+      "lastAPIDurationWithoutRetries": 0,
+      "lastToolDuration": 0,
+      "lastDuration": 6075,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 0,
+      "lastTotalOutputTokens": 0,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {},
+      "lastSessionId": "61d04fd1-435c-402c-8617-780c6cf79dfb"
+    },
+    "/Users/daniel.liu/work/horizon-ai": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "main.py",
+        "VehicleMapper.cs",
+        "VehicleSearchService.cs",
+        "Program.cs",
+        "VehicleSearchResponse.cs"
+      ],
+      "reactVulnerabilityCache": {
+        "detected": false,
+        "package": null,
+        "packageName": null,
+        "version": null,
+        "packageManager": null
+      },
+      "exampleFilesGeneratedAt": 1768880844042,
+      "lastCost": 0.1408975,
+      "lastAPIDuration": 36467,
+      "lastAPIDurationWithoutRetries": 36466,
+      "lastToolDuration": 8,
+      "lastDuration": 247385,
+      "lastLinesAdded": 2,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 553,
+      "lastTotalOutputTokens": 1969,
+      "lastTotalCacheCreationInputTokens": 7236,
+      "lastTotalCacheReadInputTokens": 92557,
+      "lastTotalWebSearchRequests": 0,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 519,
+          "outputTokens": 26,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0006490000000000001
+        },
+        "claude-opus-4-5-20251101": {
+          "inputTokens": 34,
+          "outputTokens": 1943,
+          "cacheReadInputTokens": 92557,
+          "cacheCreationInputTokens": 7236,
+          "webSearchRequests": 0,
+          "costUSD": 0.1402485
+        }
+      },
+      "lastSessionId": "b1f86409-ffa3-486a-8901-288eeeb1e8fb"
+    }
+  },
+  "lastReleaseNotesSeen": "2.1.12",
+  "hasShownOpus45Notice": {
+    "0db45292-4a2c-439d-aa17-42c955de84ca": true
+  },
+  "s1mAccessCache": {
+    "0db45292-4a2c-439d-aa17-42c955de84ca": {
+      "hasAccess": false,
+      "hasAccessNotAsDefault": false,
+      "timestamp": 1768887114087
+    }
+  },
+  "thinkingMigrationComplete": true,
+  "autoUpdatesProtectedForNative": true,
+  "githubRepoPaths": {
+    "carsales-private/csn-internal-dto": [
+      "/Users/daniel.liu/work/Csn-Internal-Dto"
+    ],
+    "carsales-private/dataservice": [
+      "/Users/daniel.liu/work/dataservice/terraform",
+      "/Users/daniel.liu/work/dataservice/terraform/internal-api",
+      "/Users/daniel.liu/work/dataservice/terraform/api",
+      "/Users/daniel.liu/work/dataservice/src/opensearch",
+      "/Users/daniel.liu/work/dataservice"
+    ],
+    "webmotors-private/webmotors.pandora": [
+      "/Users/daniel.liu/work/webmotors.pandora"
+    ],
+    "carsales-private/horizon-ai": [
+      "/Users/daniel.liu/work/horizon-ai/data",
+      "/Users/daniel.liu/work/horizon-ai"
+    ]
+  },
+  "groveConfigCache": {
+    "6fc57e19-db22-4926-933a-7feedbe8f691": {
+      "grove_enabled": true,
+      "timestamp": 1768869152846
+    }
+  },
+  "lastPlanModeUse": 1768881057454,
+  "opusProMigrationComplete": true,
+  "cachedChromeExtensionInstalled": false,
+  "passesEligibilityCache": {
+    "0db45292-4a2c-439d-aa17-42c955de84ca": {
+      "eligible": true,
+      "referral_code_details": {
+        "code": "8BqVmgejRg",
+        "campaign": "claude_code_guest_pass",
+        "referral_link": "https://claude.ai/referral/8BqVmgejRg"
+      },
+      "timestamp": 1768887112291
+    }
+  },
+  "passesUpsellSeenCount": 4,
+  "skillUsage": {
+    "init": {
+      "usageCount": 1,
+      "lastUsedAt": 1768861556370
+    }
+  },
+  "hasVisitedPasses": true
+}

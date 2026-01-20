@@ -1,0 +1,14 @@
+.claude/cache
+.claude/debug
+.claude/downloads
+.claude/file-history
+.claude/paste-cache
+.claude/plans
+.claude/session-env
+.claude/projects
+.claude/shell-snapshots
+.claude/statsig
+.claude/telemetry
+.claude/todos
+.claude/history.jsonl
+.claude/stats-cache.json
