@@ -1,0 +1,15 @@
+{
+  "name": "reverse-engineer-js",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.11.24"
+  },
+  "trustedDependencies": [
+    "@swc/core"
+  ]
+}

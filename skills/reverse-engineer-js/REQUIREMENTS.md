@@ -5,7 +5,7 @@ CLI toolkit for reverse-engineering large minified JavaScript bundles (10+ MB). 
 ## Usage
 
 ```
-node tools/minified-js-analyzer/cli.mjs <command> <file> [options]
+bun ~/.claude/skills/reverse-engineer-js/cli.mjs <command> <file> [options]
 ```
 
 ## Dependencies

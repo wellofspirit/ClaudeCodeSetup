@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 // Minified JS Analyzer — CLI tool for reverse-engineering large minified bundles.
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -23,7 +23,7 @@ const HELP = `
 Minified JS Analyzer — Reverse-engineering tool for large minified bundles
 
 Usage:
-  node $CLI <command> <file> [options]
+  bun $CLI <command> <file> [options]
 
 Commands:
   beautify <file> [--output <path>]        Create readable copy with offset map
@@ -40,18 +40,18 @@ Commands:
   decompile <file> <char-offset>           Best-effort readable decompilation
 
 Examples:
-  node tools/minified-js-analyzer/cli.mjs beautify cli.js
-  node tools/minified-js-analyzer/cli.mjs extract-fn cli.js 7984321
-  node tools/minified-js-analyzer/cli.mjs scope cli.js 7988095
-  node tools/minified-js-analyzer/cli.mjs trace-io cli.js "process.stdout.write"
-  node tools/minified-js-analyzer/cli.mjs find cli.js "agent_progress"
-  node tools/minified-js-analyzer/cli.mjs refs cli.js 7988095
-  node tools/minified-js-analyzer/cli.mjs calls cli.js 7984321
-  node tools/minified-js-analyzer/cli.mjs strings cli.js --near 7988095
-  node tools/minified-js-analyzer/cli.mjs patch-check cli.js "for await(let D1 of"
-  node tools/minified-js-analyzer/cli.mjs map cli.js --json --strings
-  node tools/minified-js-analyzer/cli.mjs diff-fns old-cli.js new-cli.js
-  node tools/minified-js-analyzer/cli.mjs decompile cli.js 7984321
+  bun $CLI beautify cli.js
+  bun $CLI extract-fn cli.js 7984321
+  bun $CLI scope cli.js 7988095
+  bun $CLI trace-io cli.js "process.stdout.write"
+  bun $CLI find cli.js "agent_progress"
+  bun $CLI refs cli.js 7988095
+  bun $CLI calls cli.js 7984321
+  bun $CLI strings cli.js --near 7988095
+  bun $CLI patch-check cli.js "for await(let D1 of"
+  bun $CLI map cli.js --json --strings
+  bun $CLI diff-fns old-cli.js new-cli.js
+  bun $CLI decompile cli.js 7984321
 `.trim();
 
 if (!command || command === '--help' || command === '-h') {

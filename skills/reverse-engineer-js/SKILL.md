@@ -1,8 +1,6 @@
 ---
 name: reverse-engineer-js
 description: Reverse engineer minified JavaScript bundles. Use when analyzing minified/bundled JS files to understand architecture, trace function calls, find specific code patterns, or prepare patches against minified code.
-argument-hint: [file-path] [goal]
-allowed-tools: Read, Grep, Glob, Bash(node *), Bash(bun *)
 ---
 
 # Reverse Engineering Minified JS Bundles
@@ -14,52 +12,52 @@ You are analyzing a minified JavaScript bundle. Use the analyzer toolkit and fol
 The CLI lives in the same directory as this skill. All commands take a file path as the first argument.
 
 ```bash
-CLI=~/work/claude-setup/skills/reverse-engineer-js/cli.mjs
+CLI=~/.claude/skills/reverse-engineer-js/cli.mjs
 ```
 
 ### Discovery Commands (fast, no AST — state-machine-based)
 
 ```bash
 # Beautify: create readable copy + offset map (handles 11MB in ~0.4s)
-node $CLI beautify <file>
+bun $CLI beautify <file>
 
 # Find: search for pattern, results grouped by enclosing function
-node $CLI find <file> <pattern> [--regex]
+bun $CLI find <file> <pattern> [--regex]
 
 # Strings: index all string literals (the #1 landmark in minified code)
-node $CLI strings <file> --near <char-offset>    # strings within ±5000 chars
-node $CLI strings <file> --filter <substring>     # filter by content
+bun $CLI strings <file> --near <char-offset>    # strings within ±5000 chars
+bun $CLI strings <file> --filter <substring>     # filter by content
 
 # Extract function: pull out complete function at offset with signature + params
-node $CLI extract-fn <file> <char-offset>
+bun $CLI extract-fn <file> <char-offset>
 
 # Trace I/O: map writers and readers for a channel, detect protocol mismatches
-node $CLI trace-io <file> "process.stdout.write"
+bun $CLI trace-io <file> "process.stdout.write"
 
 # Patch check: validate a pattern matches exactly once before patching
-node $CLI patch-check <file> <pattern> [--replacement <string>]
+bun $CLI patch-check <file> <pattern> [--replacement <string>]
 ```
 
 ### Deep Analysis Commands (SWC-based, ~2.5s parse for 11MB)
 
 ```bash
 # Scope: list all variables accessible at an offset, grouped by scope depth
-node $CLI scope <file> <char-offset> [--all]
+bun $CLI scope <file> <char-offset> [--all]
 
 # Refs: external variables actually referenced by function (useful subset of scope)
-node $CLI refs <file> <char-offset>
+bun $CLI refs <file> <char-offset>
 
 # Calls: outgoing + incoming call graph for a function
-node $CLI calls <file> <char-offset>
+bun $CLI calls <file> <char-offset>
 
 # Map: build complete function index (11,000+ functions in a typical SDK bundle)
-node $CLI map <file> [--json] [--strings]
+bun $CLI map <file> [--json] [--strings]
 
 # Diff: compare two bundle versions — find moved, modified, added, removed functions
-node $CLI diff-fns <old-file> <new-file> [--json]
+bun $CLI diff-fns <old-file> <new-file> [--json]
 
 # Decompile: best-effort readable decompilation with variable annotations
-node $CLI decompile <file> <char-offset>
+bun $CLI decompile <file> <char-offset>
 ```
 
 ### Typical Workflow

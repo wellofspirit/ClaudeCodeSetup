@@ -7,7 +7,7 @@ async function getSwc() {
   try {
     _swc = await import('@swc/core');
   } catch {
-    throw new Error('@swc/core not installed. Run: bun add -d @swc/core');
+    throw new Error('@swc/core not installed. Run: cd ~/.claude/skills/reverse-engineer-js && bun install');
   }
   return _swc;
 }
