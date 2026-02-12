@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test"
+    "test": "bun test",
+    "build": "bun build --compile cli.mjs --outfile bundle-analyzer",
+    "install": "./install.sh"
   },
   "devDependencies": {
     "@swc/core": "^1.11.24"

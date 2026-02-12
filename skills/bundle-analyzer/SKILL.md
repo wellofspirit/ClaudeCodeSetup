@@ -9,60 +9,56 @@ You are analyzing a minified JavaScript bundle. Use the analyzer toolkit and fol
 
 ## Analyzer Toolkit
 
-The CLI lives in the same directory as this skill. All commands take a file path as the first argument.
-
-```bash
-CLI=~/.claude/skills/reverse-engineer-js/cli.mjs
-```
+The `bundle-analyzer` command is available in your PATH after installation.
 
 ### Discovery Commands (fast, no AST — state-machine-based)
 
 ```bash
 # Beautify: create readable copy + offset map (handles 11MB in ~0.4s)
-bun $CLI beautify <file>
+bundle-analyzer beautify <file>
 
 # Find: search for pattern, results grouped by enclosing function
-bun $CLI find <file> <pattern> [--regex]
+bundle-analyzer find <file> <pattern> [--regex]
 
 # Strings: index all string literals (the #1 landmark in minified code)
-bun $CLI strings <file> --near <char-offset>    # strings within ±5000 chars
-bun $CLI strings <file> --filter <substring>     # filter by content
+bundle-analyzer strings <file> --near <char-offset>    # strings within ±5000 chars
+bundle-analyzer strings <file> --filter <substring>     # filter by content
 
 # Extract function: pull out complete function at offset with signature + params
-bun $CLI extract-fn <file> <char-offset>
+bundle-analyzer extract-fn <file> <char-offset>
 
 # Trace I/O: map writers and readers for a channel, detect protocol mismatches
-bun $CLI trace-io <file> "process.stdout.write"
+bundle-analyzer trace-io <file> "process.stdout.write"
 
 # Patch check: validate a pattern matches exactly once before patching
-bun $CLI patch-check <file> <pattern> [--replacement <string>]
+bundle-analyzer patch-check <file> <pattern> [--replacement <string>]
 ```
 
 ### Deep Analysis Commands (SWC-based, ~2.5s parse for 11MB)
 
 ```bash
 # Scope: list all variables accessible at an offset, grouped by scope depth
-bun $CLI scope <file> <char-offset> [--all]
+bundle-analyzer scope <file> <char-offset> [--all]
 
 # Refs: external variables actually referenced by function (useful subset of scope)
-bun $CLI refs <file> <char-offset>
+bundle-analyzer refs <file> <char-offset>
 
 # Calls: outgoing + incoming call graph for a function
-bun $CLI calls <file> <char-offset>
+bundle-analyzer calls <file> <char-offset>
 
 # Map: build complete function index (11,000+ functions in a typical SDK bundle)
-bun $CLI map <file> [--json] [--strings]
+bundle-analyzer map <file> [--json] [--strings]
 
 # Diff: compare two bundle versions — find moved, modified, added, removed functions
-bun $CLI diff-fns <old-file> <new-file> [--json]
+bundle-analyzer diff-fns <old-file> <new-file> [--json]
 
 # Decompile: best-effort readable decompilation with variable annotations
-bun $CLI decompile <file> <char-offset>
+bundle-analyzer decompile <file> <char-offset>
 ```
 
 ### Typical Workflow
 
-1. **`find`** — locate code by string landmark (e.g., `find cli.js "agent_progress"`)
+1. **`find`** — locate code by string landmark (e.g., `bundle-analyzer find cli.js "agent_progress"`)
 2. **`extract-fn`** — pull out the enclosing function, see signature + params
 3. **`strings --near`** — see what other string landmarks are nearby
 4. **`refs`** — what external variables does this function use?
