@@ -1,9 +1,9 @@
 ---
-name: reverse-engineer-js
-description: Reverse engineer minified JavaScript bundles. Use when analyzing minified/bundled JS files to understand architecture, trace function calls, find specific code patterns, or prepare patches against minified code.
+name: bundle-analyzer
+description: Explore and analyze minified/bundled JavaScript code. Use when navigating large or hard-to-read JS bundles, tracing function call graphs, finding code by string literals or structural patterns, decompiling minified functions into readable output, inspecting variable scopes and references, comparing bundle versions to track changes, tracing I/O channels and detecting protocol mismatches, or building and validating patches against minified code. Ideal for any JS codebase exploration where standard tools struggle with minification or bundle size.
 ---
 
-# Reverse Engineering Minified JS Bundles
+# Analyze JS Bundles
 
 You are analyzing a minified JavaScript bundle. Use the analyzer toolkit and follow these principles to navigate the code effectively.
 
