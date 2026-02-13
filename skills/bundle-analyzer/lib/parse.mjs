@@ -1,19 +1,7 @@
 import { readFileSync } from 'node:fs';
-
-let _swc = null;
-
-async function getSwc() {
-  if (_swc) return _swc;
-  try {
-    _swc = await import('@swc/core');
-  } catch {
-    throw new Error('@swc/core not installed. Run: cd ~/.claude/skills/reverse-engineer-js && bun install');
-  }
-  return _swc;
-}
+import * as swc from '@swc/core';
 
 export async function parseSource(src) {
-  const swc = await getSwc();
   const ast = await swc.parse(src, { syntax: 'ecmascript', target: 'esnext' });
   // SWC accumulates byte offsets across parse() calls within a process.
   // Normalize all spans to 0-based by subtracting the module's base offset.

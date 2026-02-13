@@ -49,4 +49,38 @@ describe('checkPatch', () => {
     expect(result.matches[0].context).toContain('aaaa');
     expect(result.matches[0].context).toContain('bbbb');
   });
+
+  test('regex mode finds unique match', () => {
+    const src = 'function foo(a,b){return a+b}';
+    const result = checkPatch(src, 'function \\w+\\(a,b\\)', undefined, { regex: true });
+    expect(result.status).toBe('UNIQUE');
+    expect(result.matches[0].matchText).toBe('function foo(a,b)');
+  });
+
+  test('regex mode returns AMBIGUOUS for multiple matches', () => {
+    const src = 'function foo(){} function bar(){}';
+    const result = checkPatch(src, 'function \\w+\\(\\)', undefined, { regex: true });
+    expect(result.status).toBe('AMBIGUOUS');
+    expect(result.matchCount).toBe(2);
+  });
+
+  test('regex mode extracts capture groups', () => {
+    const src = 'function foo(x,y){return x+y}';
+    const result = checkPatch(src, 'function (\\w+)\\((\\w+),(\\w+)\\)', undefined, { regex: true });
+    expect(result.matches[0].captures).toEqual(['foo', 'x', 'y']);
+  });
+
+  test('regex mode with %V% expansion', () => {
+    const src = 'var $myVar = 123;';
+    const result = checkPatch(src, 'var %V% =', undefined, { regex: true });
+    expect(result.status).toBe('UNIQUE');
+    expect(result.matches[0].matchText).toBe('var $myVar =');
+  });
+
+  test('regex mode replacement preview with $N substitution', () => {
+    const src = 'function foo(a){return a}';
+    const result = checkPatch(src, 'function (\\w+)\\((\\w+)\\)', 'function $1_new($2)', { regex: true });
+    expect(result.preview).toBeDefined();
+    expect(result.preview.after).toContain('function foo_new(a)');
+  });
 });

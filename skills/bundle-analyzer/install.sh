@@ -12,27 +12,55 @@ echo "🔧 Installing $SKILL_NAME skill to Claude Code..."
 mkdir -p "$HOME/.claude/skills"
 mkdir -p "$BIN_DIR"
 
-# Build the binary
-echo "📦 Building binary..."
-cd "$SCRIPT_DIR"
-bun build --compile cli.mjs --outfile bundle-analyzer
-
-# Install binary to ~/.local/bin
-echo "📦 Installing binary to $BIN_DIR..."
-cp bundle-analyzer "$BIN_DIR/"
-chmod +x "$BIN_DIR/bundle-analyzer"
-
 # Create/update skill directory
 echo "📁 Installing skill to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 
-# Copy only the skill documentation
+# Copy source files
+echo "📦 Copying source files..."
+cd "$SCRIPT_DIR"
+cp -r lib "$INSTALL_DIR/"
+cp cli.mjs "$INSTALL_DIR/"
 cp SKILL.md "$INSTALL_DIR/"
+
+# Copy lockfile if it exists
+if [ -f "bun.lock" ]; then
+  cp bun.lock "$INSTALL_DIR/"
+fi
+
+# Create package.json without postinstall hook to avoid recursion
+cat > "$INSTALL_DIR/package.json" << 'PKG'
+{
+  "name": "bundle-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@swc/core": "^1.11.24"
+  },
+  "trustedDependencies": [
+    "@swc/core"
+  ]
+}
+PKG
+
+# Install dependencies in target directory
+echo "📦 Installing dependencies..."
+cd "$INSTALL_DIR"
+bun install --production
+
+# Create wrapper script in ~/.local/bin
+echo "📝 Creating wrapper script in $BIN_DIR..."
+cat > "$BIN_DIR/bundle-analyzer" << 'WRAPPER'
+#!/usr/bin/env bash
+exec bun "$HOME/.claude/skills/bundle-analyzer/cli.mjs" "$@"
+WRAPPER
+chmod +x "$BIN_DIR/bundle-analyzer"
 
 echo "✅ Installation complete!"
 echo ""
-echo "Binary installed to: $BIN_DIR/bundle-analyzer"
-echo "Skill files installed to: $INSTALL_DIR"
+echo "Wrapper script: $BIN_DIR/bundle-analyzer"
+echo "Source files and dependencies: $INSTALL_DIR"
 echo ""
 echo "Make sure $BIN_DIR is in your PATH:"
 echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""

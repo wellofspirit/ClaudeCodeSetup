@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
 import {
-  findFunctionStart, extractFunction, findMatchingParen, parseParamList, extractSignature,
+  findFunctionStart, extractFunction, findMatchingParen, parseParamList, extractSignature, findFunctionStack,
 } from '../lib/extract-fn.mjs';
 
 describe('findMatchingParen', () => {
@@ -96,5 +96,39 @@ describe('extractSignature', () => {
     const src = '(x,y)=>{return x}';
     const sig = extractSignature(src, 0);
     expect(sig).toBe('(x,y)=>');
+  });
+});
+
+describe('findFunctionStack', () => {
+  test('returns nesting chain for nested functions', () => {
+    const src = 'function outer(){function middle(){function inner(){return 1}}}';
+    // offset inside inner function body
+    const stack = findFunctionStack(src, 50);
+    expect(stack.length).toBe(3);
+    // Depth 0 should be the innermost (smallest)
+    expect(stack[0].signature).toContain('inner');
+    expect(stack[1].signature).toContain('middle');
+    expect(stack[2].signature).toContain('outer');
+  });
+
+  test('returns single entry for non-nested function', () => {
+    const src = 'function foo(){return 1}';
+    const stack = findFunctionStack(src, 16);
+    expect(stack.length).toBe(1);
+    expect(stack[0].signature).toContain('foo');
+  });
+
+  test('returns empty array for offset outside any function', () => {
+    const src = 'var x=1;';
+    const stack = findFunctionStack(src, 4);
+    expect(stack.length).toBe(0);
+  });
+
+  test('stack entries have size info', () => {
+    const src = 'function outer(){function inner(){return 1}}';
+    const stack = findFunctionStack(src, 35);
+    expect(stack.length).toBe(2);
+    // Inner should be smaller than outer
+    expect(stack[0].size).toBeLessThan(stack[1].size);
   });
 });

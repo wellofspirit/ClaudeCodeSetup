@@ -1,600 +1,668 @@
-# Minified JS Analyzer — Full Requirements
+# bundle-analyzer — Improvement Requirements
 
-CLI toolkit for reverse-engineering large minified JavaScript bundles (10+ MB). Designed for the specific workflow of patching SDK internals: find code by landmarks, understand its structure, trace data flow, and validate patches.
-
-## Usage
-
-```
-bun ~/.claude/skills/reverse-engineer-js/cli.mjs <command> <file> [options]
-```
-
-## Dependencies
-
-- `@swc/core` — Rust-based JS parser. Handles 11MB files in ~2.5s. Required by commands that need AST analysis (scope, refs, calls, map, diff-fns).
-- Node.js builtins only for everything else.
+This document captures gaps, pain points, and improvement ideas observed during real-world patch construction against the Claude Code SDK's minified `cli.js` (~11MB). The goal is to make bundle-analyzer a complete toolkit for the discovery → extraction → patch construction workflow, eliminating the need to drop to raw `node -e` scripts.
 
 ---
 
-## Commands
+## Context: The Patch-Writing Workflow
 
-### 1. `beautify <file> [--output <path>]`
+When writing patches against minified JS, the workflow is:
 
-**Purpose:** Create a human-readable copy of a minified file. This is always the first step — you can't read a 376,000-character single line.
+1. **Discover** — Find where the target code lives by searching for string literals and structural patterns
+2. **Understand** — Read the surrounding code, understand the function structure, identify variable names
+3. **Extract** — Pull out the exact variable names that will change between versions (capture groups)
+4. **Construct** — Build a regex that matches the target uniquely, with capture groups for variable names
+5. **Verify** — Confirm the regex matches exactly once and the replacement produces correct output
+6. **Generate** — Write the `apply.mjs` script with idempotency, matching, replacement, and verification
 
-**What it does:**
-- Reads the minified source and splits it into lines at syntax boundaries (`;`, `{`, `}`) while respecting strings, comments, regex literals, and template literals.
-- Adds indentation (2 spaces per brace depth level) so nested code is visually scoped.
-- Produces an **offset map** — a JSON array where `offsetMap[lineNumber]` gives the original char offset of that line. This lets other commands cross-reference between beautified output and the original file.
-
-**Why not Prettier/ESLint?** They OOM or take 30+ minutes on 10+ MB files. This custom state-machine approach processes 11MB in ~0.4 seconds.
-
-**Input:** File path, optional `--output <path>` for the beautified file.
-
-**Output (files):**
-- `<file>.beautified.js` — the readable version
-- `<file>.offsetmap.json` — line-to-offset mapping
-
-**Output (stdout):**
-```
-Reading cli.js...
-File size: 11.4 MB
-Beautified: 376630 lines written to cli.js.beautified.js
-Offset map: 376630 entries written to cli.js.offsetmap.json
-Time: 0.44s
-```
-
-**Implementation:** State machine tracks 7 states (normal, single-quote string, double-quote string, template literal, regex, line comment, block comment). Only splits on `;{}` when in normal state.
+bundle-analyzer currently excels at step 1 (discovery via `find`, `strings`). It's adequate at step 2 (`extract-fn`, `decompile`). It's weak at steps 3-6, which is where I kept dropping to raw Node.js.
 
 ---
 
-### 2. `extract-fn <file> <char-offset>`
+## Improvement 1: `slice` Command — Raw Code at Offset
 
-**Purpose:** Given a character offset (from grep, `find`, or manual inspection), extract the complete function containing that offset — its full signature, parameter list, and beautified body.
+### Problem
 
-**What it does:**
-1. Forward-scans the source tracking function/arrow/method-shorthand signatures and brace depth to build a stack of enclosing functions at the given offset.
-2. Finds the **innermost** enclosing function.
-3. Skips past the parameter list `(...)` (which may contain destructuring `{}` that must NOT be confused with the function body).
-4. Extracts from signature start to the matching closing `}`.
-5. Parses the parameter list into individual params with positional indices.
-6. Beautifies the extracted code.
+The most basic operation — "show me 300 chars of code at offset X" — has no dedicated command. I used `node -e` for this dozens of times:
 
-**Why this matters:** In minified code, parameters map positionally — knowing that `D` is the 4th parameter is critical because callers pass arguments by position. The raw code `async call({prompt:A,subagent_type:q,...},J,X,D,j)` doesn't tell you positions at a glance.
-
-**Input:** File path, character offset (integer).
-
-**Output (stdout):**
-```
-Function: async call({prompt:A,subagent_type:q,...},J,X,D,j)
-Offset:   7984321 → 7993406 (9085 chars)
-Params:   {prompt:A,...} (1st), J (2nd), X (3rd), D (4th), j (5th)
-────────────────────────────────────────────────────────────────
-<beautified function body>
+```js
+node -e "const fs=require('fs'); const s=fs.readFileSync('cli.js','utf8'); console.log(s.slice(7944591,7944891))"
 ```
 
-**Implementation:** State-machine-based (no AST needed). Uses forward scan with function-signature detection for `function`, `async function`, `async method(`, `=>` patterns.
+`strings --near` is the closest alternative, but it filters to only string literals, discarding the code structure I actually need to see. `extract-fn` tries to find the enclosing function boundary, which sometimes picks the wrong nesting level and always involves extra parsing overhead.
+
+### What I Need
+
+```bash
+bundle-analyzer slice cli.js 7944591           # default 500 chars
+bundle-analyzer slice cli.js 7944591 300       # custom length
+bundle-analyzer slice cli.js 7944591 --before 100 --after 300  # asymmetric
+bundle-analyzer slice cli.js 7944591 --beautify  # run through beautifier
+```
+
+### Expected Output
+
+```
+Slice at char 7944591 (500 chars):
+
+────────────────────────────────────────────────────────────────────────────────
+if(f1.push(w1),w1.type!=="assistant"&&w1.type!=="user")continue;if(w1.type==="
+assistant"){let O1=G26(w1);if(O1>0)J.setResponseLength((X1)=>X1+O1)}let o=bO([
+w1]);P1.push(...o);for(let O1 of o)for(let X1 of O1.message.content){if(X1.typ
+...
+────────────────────────────────────────────────────────────────────────────────
+```
+
+With `--beautify`:
+
+```
+Slice at char 7944591 (500 chars, beautified):
+
+────────────────────────────────────────────────────────────────────────────────
+if (f1.push(w1), w1.type !== "assistant" && w1.type !== "user") continue;
+if (w1.type === "assistant") {
+  let O1 = G26(w1);
+  if (O1 > 0) J.setResponseLength((X1) => X1 + O1)
+}
+let o = bO([w1]);
+P1.push(...o);
+for (let O1 of o)
+  for (let X1 of O1.message.content) {
+    if (X1.type !== "tool_use" && X1.type !== "tool_result") continue;
+    ...
+────────────────────────────────────────────────────────────────────────────────
+```
+
+### Implementation Notes
+
+- Trivially simple: `src.slice(offset, offset + length)`
+- Beautify option reuses existing `beautify()` function on the slice
+- No AST parsing needed, should be near-instant
+- This is the highest-value, lowest-effort improvement
 
 ---
 
-### 3. `scope <file> <char-offset> [--all]`
+## Improvement 2: `find` with Capture Group Extraction
 
-**Purpose:** List every variable accessible at a given character offset, organized by scope depth. Answers: "what names can my injected code use at this point?"
+### Problem
 
-**What it does:**
-1. Parses the entire file with SWC.
-2. Walks the AST building a scope tree — each function, arrow, block, for-loop, and catch clause creates a new scope with a parent pointer.
-3. Finds the innermost scope containing the given offset.
-4. Walks the parent chain outward, collecting all variable declarations (params, `let`, `const`, `var`, function declarations, class declarations, destructured bindings).
-5. Groups variables by scope depth.
+When using `find --regex`, the tool shows matches with context but doesn't extract regex capture groups. For patch scripts, capture groups are *the entire point* — I need to dynamically extract minified variable names.
 
-**Why `--all` exists:** Module scope in an 11MB bundle typically has 18,000+ variable declarations. Without `--all`, module-scope vars are capped at 30. Use `--all` when you need to find a specific module-level function.
+Currently I have to:
+1. Use `find` to discover the code location
+2. Copy the pattern
+3. Write a `node -e` script to run the same regex with `src.match()` and print groups
+4. Copy the group values back
 
-**Input:** File path, character offset, optional `--all` flag.
+This round-trip happens for every single pattern in every patch script.
 
-**Output (stdout):**
-```
-Scope at char 7988095 (function, char 7987841–7989673):
+### Example: What I Needed
 
-  # Immediate scope (function, char 7987841–7989673)
-  A          param         char 7987841
-  q          param         char 7987841
-  ...
+I was looking for the dequeue function. The README says to search for `async function NAME(A,q){...queuedCommands.length===0...}`. I need to capture `NAME`, `A`, and `q` since they'll be different in a new SDK version.
 
-  # Closure depth 1 (module, char 0–11387761)
-  ySq        var           char 357
-  CSq        destructured  char 378
-  ... and 18828 more (use --all to show all)
-
-Total: 18875 variables in scope
+What I did:
+```bash
+bundle-analyzer find cli.js "queuedCommands.length===0" --regex
+# Shows context, but I can't extract variable names from the output
 ```
 
-**Implementation:** SWC parse + custom AST walker. Handles `FunctionDeclaration`, `FunctionExpression`, `ArrowFunctionExpression`, `ClassMethod`, `MethodProperty`, `ClassDeclaration`, `BlockStatement`, `ForStatement`, `ForInStatement`, `ForOfStatement`, `CatchClause`, `VariableDeclaration`, and pattern bindings (ObjectPattern, ArrayPattern, RestElement, AssignmentPattern).
+Then had to write:
+```bash
+node -e "
+const src = require('fs').readFileSync('cli.js','utf8');
+const m = src.match(/async function ([\w\$]+)\(([\w\$]+),([\w\$]+)\)\{if\(\(await \2\(\)\)\.queuedCommands\.length===0\)return;/);
+console.log('fn:', m[1], 'param1:', m[2], 'param2:', m[3]);
+"
+```
+
+### What I Need
+
+```bash
+bundle-analyzer find cli.js \
+  'async function ([\w$]+)\(([\w$]+),([\w$]+)\)\{if\(\(await \2\(\)\)\.queuedCommands\.length===0\)return;' \
+  --regex --captures
+```
+
+### Expected Output
+
+```
+Found 1 match in 1 function:
+
+  async function zO6(A,q) — char 5216764
+    [5216764] Match (95 chars):
+      async function zO6(A,q){if((await A()).queuedCommands.length===0)return;
+    Captures:
+      $1: zO6
+      $2: A
+      $3: q
+```
+
+### Implementation Notes
+
+- In `find.mjs`, the regex match object `m` already has capture groups via `m[1]`, `m[2]`, etc.
+- The `matches.push()` call currently stores `{ offset, matchText }` — add `captures: [...m].slice(1)` (or named groups via `m.groups`)
+- In the CLI output, display capture groups when `--captures` flag is present and the regex has groups
+- Named capture groups would be even better: `(?<fnName>[\w$]+)` → `fnName: zO6`
 
 ---
 
-### 4. `trace-io <file> <pattern>`
+## Improvement 3: `\V` Shorthand for Minified Variable Pattern
 
-**Purpose:** Map an I/O channel — find everything that writes to it, everything that reads from it, classify the transport protocol, and warn about mismatches.
+### Problem
 
-**What it does:**
-1. Finds all occurrences of the pattern (e.g., `process.stdout.write`) in the source.
-2. For each write site, examines ±256 chars of surrounding context to classify the transport:
-   - `Buffer.alloc` + `writeUInt32LE` → **BINARY** (length-prefixed)
-   - `JSON.stringify` + `"\n"` → **JSON+NL** (newline-delimited JSON)
-   - Raw string concatenation → **TEXT**
-3. Searches for corresponding reader patterns (`createInterface`, `on('data')`, `readUInt32LE`, `on('line')`).
-4. Detects protocol mismatches (e.g., binary writer + readline reader).
+Every regex pattern in patch work uses `[\w$]+` to match minified identifiers (which can contain `$`). It's verbose, easy to get wrong (`\w+` misses `$`), and clutters patterns.
 
-**Why this matters:** The SDK uses stdout for two incompatible protocols simultaneously — binary length-prefixed messages (via `fY1`) and newline-delimited JSON (via the SDK transport). Using the wrong one causes silent data corruption. This command surfaces that immediately.
+### Current Pain
 
-**Input:** File path, pattern string.
-
-**Output (stdout):**
-```
-Writers (33 found):
-  char 7988354    _ptu                 JSON+NL (newline-delimited JSON)
-  char 10580668   fY1                  BINARY (UInt32 length-prefixed)
-  ...
-
-Readers (92 found):
-  char 10472253   $wz                  readline (line-based)
-  ...
-
-⚠  Protocol mismatch: binary writer(s) found but reader uses line-based protocol
+```bash
+bundle-analyzer find cli.js \
+  'async function ([\w$]+)\(([\w$]+),([\w$]+)\)\{if\(\(await \2\(\)\)\.queuedCommands' \
+  --regex
 ```
 
-**Implementation:** String `indexOf` for pattern matching. Heuristic context classification. Hardcoded reader pattern table.
+### Proposed Shorthand
+
+```bash
+bundle-analyzer find cli.js \
+  'async function (%V%)\((%V%),(%V%)\)\{if\(\(await \2\(\)\)\.queuedCommands' \
+  --regex
+```
+
+`%V%` expands to `[\w$]+` before the regex is compiled. This is a simple string replace in the CLI before passing to `new RegExp()`.
+
+### Why Not `\V`
+
+`\V` might conflict with regex escape sequences or shell escaping. `%V%` is unambiguous — it's never valid regex syntax and doesn't need shell quoting. But either would work.
+
+### Implementation Notes
+
+- Single line in `find.mjs` and `patch-check.mjs`: `pattern = pattern.replace(/%V%/g, '[\\w$]+')`
+- Document it in SKILL.md under "Minified variable naming conventions"
+- Consider also `%S%` for string literal matching: `"[^"]*"` or `"(?:[^"\\]|\\.)*"`
 
 ---
 
-### 5. `find <file> <pattern> [--regex] [--context <N>]`
+## Improvement 4: `extract-fn` with Depth Control
 
-**Purpose:** Search for a string or regex pattern, but instead of raw grep output, show each match with its **enclosing function context**. This is the #1 starting operation in any reverse-engineering session — you have a string literal landmark and want to know which function uses it.
+### Problem
 
-**What it does:**
-1. Finds all matches of the pattern in the source (string `indexOf` or `RegExp`).
-2. For each match, determines the enclosing function using `findFunctionStart()`.
-3. Extracts a lightweight function signature (name + params, without beautifying the full body).
-4. Shows ±80 chars (or `--context N` chars) of raw source around the match.
-5. Groups matches by enclosing function — if 5 matches are in the same function, they appear together under one header.
-6. Reports the function's char range so you can follow up with `extract-fn`.
+`extract-fn` finds the **tightest** enclosing function around an offset. In minified code with deep nesting (arrow functions inside for-loops inside async IIFEs inside class methods), the tightest function is often a tiny arrow callback, not the actual function I care about.
 
-**Why not just grep?** Grep gives you line numbers, but in a minified file every match is on "line 1". Even with byte offsets, you don't know which function you're in. This command bridges the gap — it's grep with semantic context.
+### Example That Failed
 
-**Input:** File path, search pattern, optional `--regex` flag, optional `--context N` (default 80).
+At offset 7944719, I wanted the Task tool's `async call()` method (~3000 chars). Instead, `extract-fn` returned a 282-char arrow function fragment:
 
-**Output (stdout):**
 ```
-Found 5 matches in 2 functions:
-
-  async call({prompt:A,...},J,X,D,j) [7984321–7993406]
-    char 7988354  ...JSON.stringify({type:"agent_progress",agent_id:...
-    char 7988514  ...type:"agent_progress",status:"started"...
-    char 7988670  ...type:"agent_progress",status:"completed"...
-
-  function p6(A,q,K) [9100000–9102000]
-    char 9100200  ...if(A.type==="agent_progress")...
-    char 9100450  ...emit("agent_progress",{...
+Function: (X1)=>X1+O1)}let o=bO([w1]);P1.push(...o);for(let O1 of o)...
 ```
 
-**Implementation:** State-machine-based (no AST). Fast — no SWC parse overhead. Reuses `findFunctionStart()` and signature extraction from extract-fn module.
+This is a lambda inside the for-await loop inside the Task tool's call method. I needed the call method, not the lambda.
+
+### What I Need
+
+```bash
+# Show the nesting chain at an offset
+bundle-analyzer extract-fn cli.js 7944719 --stack
+```
+
+Output:
+```
+Function nesting at char 7944719:
+
+  Depth 0: (X1)=>X1+O1  (7944719–7944730, 11 chars)
+  Depth 1: async()=>{...}  (7942375–7945200, 2825 chars)
+  Depth 2: async call({prompt:A,...},J,X,D,j)  (7938000–7946000, 8000 chars)
+  Depth 3: [top-level IIFE]  (7860000–7950000, 90000 chars)
+
+Use --depth N to extract a specific level.
+```
+
+Then:
+```bash
+bundle-analyzer extract-fn cli.js 7944719 --depth 2
+```
+
+Extracts the `async call()` method at depth 2.
+
+### Implementation Notes
+
+The current `findFunctionStart` already uses a `funcStack` that tracks nesting — but only returns the tightest match (`bestFunc` picks smallest range). To support depth:
+
+1. Keep all matching functions in the stack, not just the best
+2. Sort by size (smallest = depth 0)
+3. `--stack` prints the chain
+4. `--depth N` selects the Nth level
+
+Alternatively, a simpler approach: `--depth N` runs `findFunctionStart` N times, each time using the previous result's start offset minus 1 as the new search offset. This avoids changing the core algorithm but is O(N × scan), which is fine since N is small (1-3).
 
 ---
 
-### 6. `refs <file> <char-offset>`
+## Improvement 5: `context` Command — One-Shot Understanding
 
-**Purpose:** Find the external variables that a function actually **references** — the useful subset of `scope`. While `scope` tells you everything that's *available* (18,000+ at module level), `refs` tells you what the function actually *uses* (typically 5-20 names).
+### Problem
 
-**What it does:**
-1. Parses with SWC.
-2. Builds the scope tree, finds the function scope at the given offset.
-3. Walks **only** the function's AST subtree, collecting every `Identifier` node.
-4. Filters out identifiers that are declared locally within the function (params, local `let`/`const`/`var`).
-5. Filters out identifiers that appear as property names in member expressions or object keys (e.g., in `obj.foo`, `foo` is a property access, not a variable reference).
-6. For each remaining external reference, looks up its declaration in parent scopes.
-7. Groups by source scope, counts usages, records char offsets of each usage.
+Understanding code at an offset currently requires 3-4 separate commands:
 
-**Why this matters for patching:** When you inject code at a patch point, you need to know which closure variables are available AND actually used by the surrounding code. If the function references `D` (the message param) and `j` (the progress callback), those are the variables your injected code can safely use. Module-scope functions like `fY1` are also available but only the ones referenced nearby are relevant.
-
-**Input:** File path, character offset.
-
-**Output (stdout):**
-```
-External references from async call({prompt:A,...},J,X,D,j) [7984321–7993406]:
-
-  From parent scope (arrow, char 7983946–7986691):
-    n          param     3 refs at [7984500, 7984600, 7985200]
-    e          param     5 refs at [7984400, 7984800, ...]
-
-  From module scope:
-    xNY        function  1 ref  at [7984650]
-    VM         function  1 ref  at [7984700]
-    l8         function  1 ref  at [7984680]
-    tu4        function  1 ref  at [7985100]
-    Error      global    3 refs at [7984690, 7984750, 7984790]
-
-Total: 13 external references to 8 unique names
+```bash
+bundle-analyzer extract-fn cli.js 7944719      # what function am I in?
+bundle-analyzer strings cli.js --near 7944719   # what strings are nearby?
+bundle-analyzer refs cli.js 7944719             # what variables are used? (slow - 2.5s AST parse)
+bundle-analyzer scope cli.js 7944719            # what's in scope? (slow - 2.5s AST parse)
 ```
 
-**Implementation:** SWC-based. Key challenge: distinguishing variable references from property accesses (`foo` in `obj.foo` is not a variable ref, but `foo` in `foo.bar` IS a variable ref — it's the object being accessed). Handle by checking if the Identifier's parent is a `MemberExpression` and the Identifier is the `property` (not `object`) field.
+Each command re-reads the 11MB file. Three of them re-parse the AST. For a quick "what's going on here?" this is too much friction.
+
+### What I Need
+
+```bash
+bundle-analyzer context cli.js 7944719
+```
+
+### Expected Output
+
+```
+Context at char 7944719:
+
+  Enclosing function: async call({prompt:A,...},J,X,D,j)
+    Range: 7938000–7946000 (8000 chars)
+    Params: A=prompt (1st), J (2nd), X (3rd), D (4th), j (5th)
+
+  Parent function: async()=>{...}
+    Range: 7937000–7947000
+
+  Nearby strings (±2000 chars):
+    char 7943700    "text"
+    char 7944067    "completed"
+    char 7944824    "tool_use"
+    char 7944846    "tool_result"
+    char 7944955    "agent_progress"
+
+  Code at offset (±200 chars, beautified):
+    ...
+    for (let O1 of o)
+      for (let X1 of O1.message.content) {
+        if (X1.type !== "tool_use" && X1.type !== "tool_result") continue;
+        if (j) j({
+    >>>     toolUseID: `agent_${D.message.id}`,     ◄── offset 7944719
+            data: { message: O1, normalizedMessages: P1, ...
+    ...
+```
+
+### Implementation Notes
+
+- Uses existing `findFunctionStart`, `extractSignature`, `collectStrings` with `near` option
+- Code snippet is just `slice` + `beautify`
+- No AST parsing needed (skips `refs` and `scope` for speed)
+- Could add `--deep` flag that also includes refs/scope (with AST parse)
+- The `>>>` marker shows exactly where the offset falls in the beautified code
 
 ---
 
-### 7. `calls <file> <char-offset>`
+## Improvement 6: `match` Command — Regex with Patch Semantics
 
-**Purpose:** Show the call graph for a function — what functions it calls (outgoing) and what functions call it (incoming). This is critical for tracing execution chains like `sdY() → O6q() → tdY() → tool.call()`.
+### Problem
 
-**What it does:**
+`patch-check` validates that a literal string matches exactly once. But patches need **regex** matching with **capture groups** and **replacement preview**. Currently `patch-check` only does literal string matching.
 
-**Outgoing calls:**
-1. Parses with SWC.
-2. Finds the function at the given offset.
-3. Walks the function's AST subtree collecting every `CallExpression`.
-4. Extracts the callee name:
-   - Simple identifier: `foo(...)` → `foo`
-   - Member expression: `obj.method(...)` → `obj.method`
-   - Chained: `a.b.c(...)` → `a.b.c`
-   - Computed/complex: `arr[0](...)` → `<computed>`
-5. Groups by callee name, counts occurrences, records char offsets.
+The `find` command supports regex but lacks uniqueness validation and replacement preview. Neither command extracts capture groups.
 
-**Incoming calls:**
-1. Determines the function's name (if it has one — from variable assignment, object key, or function declaration).
-2. Searches the entire source for call expressions matching that name.
-3. For each call site, finds the enclosing function to show the caller.
-4. For single-letter function names (common in minified code), flags that results will include false positives from same-named variables in different scopes.
+I need a single command that does what my `apply.mjs` scripts do: regex match with capture groups, uniqueness check, and replacement preview.
 
-**Why this matters:** The SDK has deeply nested call chains where one function wraps another wraps another. Tracing `tool.call()` → understanding what `sdY()` does → discovering `O6q()` wraps `parentToolUseID` was a multi-hour manual process. This command automates the first step.
+### What I Need
 
-**Input:** File path, character offset.
-
-**Output (stdout):**
-```
-Call graph for async call({prompt:A,...},J,X,D,j) [7984321–7993406]:
-
-Outgoing calls (12 unique):
-  J.getAppState          1x  [7984450]
-  xNY                    1x  [7984650]
-  VM                     1x  [7984700]
-  l8                     1x  [7984680]
-  Error                  3x  [7984690, 7984750, 7984790]
-  tu4                    1x  [7985100]
-  iK1                    1x  [7985050]
-  ...
-
-Incoming calls (3 found):
-  ⚠ "call" is a common name — results may include false positives
-  char 8100200  in async function sdY(A,q,K,Y) [8100000–8102000]
-    ...entry.call(input,session,context,D,j)...
-  char 9500100  in function tdY(A) [9500000–9500500]
-    ...A.call({prompt:q,...})...
+```bash
+bundle-analyzer match cli.js \
+  'async function (%V%)\((%V%),(%V%)\)\{if\(\(await \2\(\)\)\.queuedCommands\.length===0\)return;' \
+  --replace 'async function $1($2,$3){/*PATCHED*/while(HST_CHECK()){let _h=HST_DEQUEUE();if(_h)$3((z)=>({...z,queuedCommands:[...z.queuedCommands,_h]}))}if((await $2()).queuedCommands.length===0)return;'
 ```
 
-**Implementation:** SWC for outgoing (AST walk is precise). String search + `findFunctionStart` for incoming (heuristic — matches `NAME(` pattern in source). Incoming results for short names (≤3 chars) get a false-positive warning.
+### Expected Output
 
----
-
-### 8. `strings <file> [--near <char-offset>] [--filter <pattern>]`
-
-**Purpose:** Build an index of every string literal in the file. Strings are the #1 landmark in minified code — they survive minification unchanged and are the primary way to locate code of interest.
-
-**What it does:**
-1. Scans the source using the state machine, collecting every string literal (single-quoted, double-quoted, and template literals without expressions).
-2. Records: the string's content, its char offset, its length, and the enclosing function name (via `findEnclosingFuncName`).
-3. Optionally filters by `--near <offset>` (only strings within ±5000 chars) or `--filter <pattern>` (content substring match).
-4. Sorts by char offset.
-
-**Why this matters:** When starting reverse-engineering, you don't know where anything is. Strings are your map. Searching for `"agent_progress"` tells you where the agent progress feature lives. Searching for `"Execution completed"` tells you where the completion handler is. This command gives you all the landmarks in one shot.
-
-**Input:** File path, optional `--near <char-offset>`, optional `--filter <pattern>`.
-
-**Output (stdout):**
 ```
-Strings near char 7988000 (±5000):
+Pattern: /async function ([\w$]+)\(([\w$]+),([\w$]+)\)\{if\(\(await \2\(\)\)\.queuedCommands\.length===0\)return;/
 
-  char 7985200  "Agent Teams is not yet available on your plan."  in call()
-  char 7986300  "In-process teammates cannot spawn other teammates"  in call()
-  char 7988100  "agent_progress"  in [anonymous]
-  char 7988200  "started"  in [anonymous]
-  char 7988400  "completed"  in [anonymous]
-  char 7989100  "subagent_result"  in [anonymous]
+Status: UNIQUE (1 match) ✓
 
-Found 6 strings
-```
+Match at char 5216764 (95 chars):
+  async function zO6(A,q){if((await A()).queuedCommands.length===0)return;
 
-**Implementation:** State-machine-based scan (no AST). When the state machine enters a string state, record the start offset. When it exits, capture the content. For template literals with `${}` expressions, only capture the static parts or skip entirely.
-
----
-
-### 9. `patch-check <file> <pattern> [--replacement <string>]`
-
-**Purpose:** Pre-flight validation before applying a patch. Confirms the search pattern matches exactly once, shows context, and optionally simulates the replacement. Prevents the most common patching failure: a pattern that matches 0 or >1 times.
-
-**What it does:**
-1. Searches the source for all matches of the pattern (string or regex).
-2. Reports the count:
-   - **0 matches:** Error — pattern not found (likely SDK version changed).
-   - **1 match:** Success — shows the match with ±200 chars of context.
-   - **>1 matches:** Error — pattern is not unique. Shows all match locations with context so you can add more specificity.
-3. If `--replacement` is provided, shows a side-by-side diff of what would change.
-4. Checks for common pitfalls:
-   - Pattern contains a minified function name (warns it may break on version updates).
-   - Pattern spans a string boundary (the match crosses from code into a string literal).
-   - Pattern is inside a comment.
-
-**Why this matters:** When the SDK updates, patches silently break. The most common failure is a pattern that used to match once now matches zero times (code moved) or multiple times (code was duplicated). Running `patch-check` before `apply.mjs` catches this immediately.
-
-**Input:** File path, pattern string (searched literally), optional `--replacement` string.
-
-**Output (stdout):**
-```
-Pattern: "for await(let D1 of"
-Status: ✓ UNIQUE (1 match)
-
-Match at char 7988000:
-  ...W1=VB1(J.options.tools);for await(let D1 of cR({...n,override:{...
+Captures:
+  $1: zO6
+  $2: A
+  $3: q
 
 Replacement preview:
-  - ...W1=VB1(J.options.tools);for await(let D1 of cR({...n,override:{...
-  + ...W1=VB1(J.options.tools);/*PATCHED*/for await(let D1 of cR({...n,override:{...
+  - async function zO6(A,q){if((await A()).queuedCommands.length===0)return;
+  + async function zO6(A,q){/*PATCHED*/while(HST_CHECK()){let _h=HST_DEQUEUE();if(_h)q((z)=>({...z,queuedCommands:[...z.queuedCommands,_h]}))}if((await A()).queuedCommands.length===0)return;
 
-Checks:
-  ✓ Pattern is in code context (not inside a string or comment)
-  ⚠ Pattern contains short identifier "D1" — may break if minifier renames it
+Replacement uses captures: $1→zO6, $2→A, $3→q
 ```
 
-**Implementation:** String `indexOf` with uniqueness check (`indexOf(pattern, firstMatch + 1) === -1`). State machine to verify match is in code context. Heuristic warning for short identifiers (`/\b[A-Za-z_$]{1,3}\b/` in pattern).
+### How It Differs From Existing Commands
+
+| Feature | `find` | `patch-check` | `match` (new) |
+|---|---|---|---|
+| Regex support | Yes | No (literal only) | Yes |
+| Capture groups | No | No | Yes |
+| Uniqueness check | No (just counts) | Yes (exits 1 if not unique) | Yes |
+| Replacement preview | No | Yes (literal only) | Yes (with $N substitution) |
+| `%V%` shorthand | No | No | Yes |
+| Exit code on failure | No | Yes | Yes |
+
+### Implementation Notes
+
+- This is essentially a merge of `find --regex --captures` and `patch-check --replacement`
+- The `--replace` string supports `$1`, `$2`, etc. which get substituted with captured groups
+- `%V%` expansion happens before regex compilation
+- Could also accept `--replace-file` for complex replacements that don't fit on command line
+- Exit code 0 if unique, 1 if not found, 2 if ambiguous
 
 ---
 
-### 10. `map <file> [--json] [--strings]`
+## Improvement 7: `extract-fn` for Brace-less Bodies
 
-**Purpose:** Build a complete function index of the entire bundle — a "table of contents" you can search through without re-parsing. Parse once (~2.5s), then all lookups are instant via `grep`/`jq` on the output.
+### Problem
 
-**What it does:**
-1. Parses the file with SWC.
-2. Walks the entire AST collecting every function-like node (FunctionDeclaration, FunctionExpression, ArrowFunctionExpression, MethodProperty, ClassMethod).
-3. For each function, records:
-   - **name:** Inferred from declaration, assignment, object key, or `<anonymous>`
-   - **start/end:** Character offsets
-   - **paramCount:** Number of parameters
-   - **isAsync:** Whether it's async
-   - **isGenerator:** Whether it uses `function*`
-   - **strings:** (if `--strings`) All string literals inside the function body
-   - **signature:** First 120 chars of the function source (for quick identification)
-4. Sorts by char offset.
+Minified code frequently has brace-less loop/if bodies:
 
-**Why this matters:** The 11MB `cli.js` contains thousands of functions. Without a map, finding a specific function requires re-parsing every time. With a map, you can:
-- `jq '.[] | select(.strings | any(contains("agent")))' cli.map.json` — find all functions mentioning "agent"
-- `jq '.[] | select(.paramCount == 5 and .isAsync)' cli.map.json` — find async functions with 5 params
-- `jq '.[] | select(.start > 7980000 and .end < 8000000)' cli.map.json` — list all functions in a region
-
-**Input:** File path, optional `--json` (machine-readable), optional `--strings` (include string literals).
-
-**Output (stdout, default human-readable):**
-```
-Function map for cli.js (11.4 MB):
-
-  #1     char 357–500       function ySq(A,q)           async  2 params
-  #2     char 520–800       function WpA()                     0 params
-  ...
-  #5432  char 7984321–7993406  async call({prompt:A,...},J,X,D,j)  async  5 params
-  ...
-
-Total: 8432 functions
+```js
+for await(let X of Y)Z.push(X),foo(X),bar(X);
 ```
 
-**Output (--json):**
-```json
-[
-  { "name": "ySq", "start": 357, "end": 500, "paramCount": 2, "isAsync": true, "signature": "function ySq(A,q){..." },
-  ...
-]
+This is a `for-await` loop with a body that's a single comma-expression statement (no braces). The current `extract-fn` tracks `{` / `}` pairs to find function boundaries. When the offset is inside this brace-less for-await body, it may not recognize the for-await as a boundary and instead return a parent function.
+
+More importantly, when I ask "extract the body of this for-await loop," there's no function boundary to extract because there are no braces.
+
+### What I Need
+
+The tool should recognize statement-level boundaries, not just function boundaries. When the offset is inside a brace-less for/if/while body:
+
+```bash
+bundle-analyzer extract-fn cli.js 7941400
 ```
 
-**Implementation:** SWC parse + full AST walk. For `--strings`, uses a nested walk within each function body collecting `StringLiteral` and `TemplateLiteral` nodes. JSON output with `--json`; human-readable table otherwise.
+Should report:
+```
+Note: Offset is inside a brace-less for-await body (no function boundary)
+Statement: for await(let H1 of LR({...}))$1.push(H1),eD1(D1,H1,a,J.options.tools),zDA(Y1.agentId,Hu1(D1),J.setAppState);
+```
+
+### Implementation Notes
+
+This is harder than the other improvements. The state machine would need to track:
+- `for`/`for await`/`while`/`if` keywords
+- Whether the following body uses `{` (block) or is a single statement
+- The extent of a comma-expression statement (ends at `;`)
+
+A simpler approach: add a `--statement` flag that extracts the containing statement (delimited by `;`) rather than the containing function. This is easy to implement — scan backwards and forwards from offset to find the nearest `;` boundaries.
 
 ---
 
-### 11. `diff-fns <file1> <file2> [--json]`
+## Improvement 8: `patch-build` — Generate Patch Script Boilerplate
 
-**Purpose:** Compare two versions of a minified bundle by function structure. When the SDK updates, this tells you which functions changed, moved, or were added/removed — even though all the variable names are different.
+### Problem
 
-**What it does:**
-1. Builds a function map for both files (same as `map` command).
-2. **Fingerprints** each function using version-stable features:
-   - String literals used (sorted, deduplicated)
-   - AST structure hash (node types + nesting depth, ignoring identifier names)
-   - Parameter count
-   - Approximate body size (character count, binned to ±10%)
-3. **Matches** functions across versions:
-   - Exact fingerprint match → **unchanged** (just moved to a different offset)
-   - Same strings + same param count but different structure hash → **modified**
-   - Fingerprint in file1 only → **removed**
-   - Fingerprint in file2 only → **added**
-4. For modified functions, highlights what structurally changed (new branches, added/removed call sites, different string literals).
-5. For patch-relevant functions, reports the offset shift: "function moved from char 7984321 → char 8102445, shift +118124".
+Every `apply.mjs` follows the exact same structure:
 
-**Why this matters:** Currently, when the SDK updates, all reverse-engineering work starts from scratch. Minified names change, char offsets shift, but the architectural patterns stay stable. This command tells you exactly what moved where, so you can update patches in minutes instead of hours.
+1. Read `cli.js`
+2. Check for `/*PATCHED:name*/` marker (idempotency)
+3. Match a regex to find the target code
+4. Extract variable names from capture groups
+5. Build the replacement string
+6. Verify uniqueness (exactly 1 match)
+7. Apply the replacement
+8. Write back
+9. Re-read and verify marker exists
 
-**Input:** Two file paths, optional `--json`.
+Writing this boilerplate is tedious and error-prone. The regex escaping alone takes several iterations to get right.
 
-**Output (stdout):**
-```
-Comparing v1 (11.2 MB, 8432 functions) vs v2 (11.5 MB, 8510 functions):
+### What I Need
 
-Unchanged: 8200 functions (positions shifted)
-Modified:  150 functions
-Added:     78 functions (new in v2)
-Removed:   32 functions (gone from v2)
-
-Key changes in patch-relevant areas:
-
-  async call({prompt:A,...}) — MODIFIED
-    v1: char 7984321–7993406 (9085 chars)
-    v2: char 8102445–8111800 (9355 chars, +270 chars)
-    Shift: +118124
-    Changes: +2 new branches, +1 new string "mode"
-
-  function fY1(...) — UNCHANGED (moved)
-    v1: char 10580668
-    v2: char 10698792 (shift: +118124)
+```bash
+bundle-analyzer patch-build cli.js \
+  --name "task-notification" \
+  --match 'async function (%V%)\((%V%),(%V%)\)\{if\(\(await \2\(\)\)\.queuedCommands\.length===0\)return;' \
+  --captures 'dequeueFn,paramA,paramQ' \
+  --replace-template 'async function ${dequeueFn}(${paramA},${paramQ}){/*PATCHED:task-notification*/while(${hstCheck}()){let _h=${hstDequeue}();if(_h)${paramQ}((z)=>({...z,queuedCommands:[...z.queuedCommands,_h]}))}if((await ${paramA}()).queuedCommands.length===0)return;' \
+  --output patch/task-notification/apply.mjs
 ```
 
-**Implementation:** SWC parse both files. Function fingerprinting uses a hash of `[sorted_strings, param_count, size_bin, ast_structure_hash]`. Matching is done by fingerprint equality (exact match) first, then fuzzy matching (same strings, different structure) for modified functions. AST structure hash is computed by serializing node types in DFS order, ignoring all identifier values.
+### Expected Output
 
----
+Generates a complete `apply.mjs` script:
 
-### 12. `decompile <file> <char-offset> [--depth <N>]`
+```js
+/**
+ * Patch: task-notification
+ * Auto-generated by bundle-analyzer patch-build
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-**Purpose:** Best-effort readability pass on a function — rename cryptic single-letter variables based on usage context, expand minification patterns, and add inline annotations. NOT a full decompiler, just enough to make a 200-line minified function readable without manually decoding every variable.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CLI_PATH = resolve(__dirname, '../../node_modules/@anthropic-ai/claude-agent-sdk/cli.js');
+const MARKER = '/*PATCHED:task-notification*/';
 
-**What it does:**
-1. Extracts the function at the given offset (via `extract-fn`).
-2. Parses the extracted function with SWC.
-3. Applies readability transformations:
+let src = readFileSync(CLI_PATH, 'utf8');
 
-   **Variable annotation:** For each single-letter variable, infers a descriptive name based on:
-   - If it's a destructured param: use the key name (`{prompt:A}` → `A` is `prompt`)
-   - If it's passed to a function with a known name: use the param name from the callee's signature
-   - If it has property accesses: use the accessed properties as hints (`A.message.content` → `A` likely holds a message)
-   - If it's used in a comparison with a string: use the string as a hint (`A.type==="tool_use"` → `A` is a content block)
-
-   **Pattern expansion:**
-   - `!0` → `true`, `!1` → `false`
-   - `void 0` → `undefined`
-   - Ternary chains: `a?b:c?d:e` → multi-line if/else (only for chains of 3+)
-   - Comma expressions: `(a(),b(),c())` → separate statements
-
-   **Inline comments:**
-   - String literal context: `if(A==="tool_use")` → `if(A==="tool_use") // content block type check`
-   - Known SDK patterns: `process.stdout.write(JSON.stringify(...)+"\\n")` → `// SDK transport: newline-delimited JSON`
-
-4. If `--depth N` is specified, also decompiles the first N levels of called functions inline (useful for understanding short helper functions without switching context).
-
-**Why this matters:** Reading `let M=Date.now(),P=await J.getAppState(),W=P.toolPermissionContext.mode` is painful. Reading `let startTime=Date.now(), appState=await session.getAppState(), permMode=appState.toolPermissionContext.mode` is not. The variable names might not be perfectly accurate, but they're good enough to understand the flow without constantly cross-referencing `scope` and `refs`.
-
-**Input:** File path, character offset, optional `--depth N` (default 0).
-
-**Output (stdout):**
-```
-Decompiled: async call({prompt:A,...},J,X,D,j) [7984321–7993406]
-Confidence: medium (12/15 variables annotated)
-
-async call({
-  prompt: A,          // → prompt
-  subagent_type: q,   // → subagentType
-  description: K,     // → description
-  model: Y,           // → model
-  resume: z,          // → resume
-  run_in_background: w, // → runInBackground
-  max_turns: H,       // → maxTurns
-  name: $,            // → name
-  team_name: O,       // → teamName
-  mode: _,            // → mode
-}, J, /* session */ X, /* context */ D, /* message */ j /* progressCallback */) {
-  let startTime = Date.now();
-  let appState = await J.getAppState();      // J = session
-  let permMode = appState.toolPermissionContext.mode;
-
-  if (O && !l8())                             // l8 = isTeamsAvailable
-    throw Error("Agent Teams is not yet available on your plan.");
-  ...
+if (src.includes(MARKER)) {
+  console.log('[task-notification] Already patched, skipping.');
+  process.exit(0);
 }
+
+const V = '[\\w$]+';
+
+const match = src.match(new RegExp(
+  `async function (${V})\\((${V}),(${V})\\)\\{if\\(\\(await \\2\\(\\)\\)\\.queuedCommands\\.length===0\\)return;`
+));
+
+if (!match) {
+  console.error('[task-notification] Pattern not found.');
+  process.exit(1);
+}
+
+const [fullMatch, dequeueFn, paramA, paramQ] = match;
+console.log(`[task-notification] Found: ${dequeueFn}(${paramA},${paramQ})`);
+
+// Verify uniqueness
+const occurrences = src.split(fullMatch).length - 1;
+if (occurrences !== 1) {
+  console.error(`[task-notification] Pattern found ${occurrences} times (expected 1).`);
+  process.exit(1);
+}
+
+const replacement = `async function ${dequeueFn}(${paramA},${paramQ}){${MARKER}while(${hstCheck}()){let _h=${hstDequeue}();if(_h)${paramQ}((z)=>({...z,queuedCommands:[...z.queuedCommands,_h]}))}if((await ${paramA}()).queuedCommands.length===0)return;`;
+
+src = src.replace(fullMatch, replacement);
+writeFileSync(CLI_PATH, src);
+
+// Verify
+const verify = readFileSync(CLI_PATH, 'utf8');
+if (!verify.includes(MARKER)) {
+  console.error('[task-notification] Verification failed.');
+  process.exit(1);
+}
+console.log('[task-notification] Patch applied successfully.');
 ```
 
-**Implementation:** SWC parse of extracted function. Multi-pass annotation:
-1. First pass: collect all identifier usages and their contexts (property accesses, function arguments, comparisons, assignments).
-2. Second pass: apply heuristic naming rules based on collected context.
-3. Third pass: expand minification patterns (`!0`, `void 0`, ternary chains).
-4. Output pass: render with inline comments for annotations that couldn't be applied as renames (ambiguous cases).
+### Implementation Notes
 
-Confidence scoring: `(annotated_vars / total_single_letter_vars) * 100`. Annotations are marked with confidence per variable (destructured = high, property-inferred = medium, guessed = low).
+- This is the highest-effort improvement but also the highest payoff for repeated patch work
+- The template needs to handle multiple match steps (some patches have 2-3 sequential finds)
+- Could support `--multi` mode where you define multiple match/replace steps
+- The generated script should be a starting point that humans edit, not a finished product
+- Consider a `--dry-run` mode that runs the generated script against the current `cli.js` and shows what would change
+- The `--captures` flag names the groups for use in the replacement template. Unnamed captures would be `$1`, `$2`, etc.
 
 ---
 
-## Architecture
+## Improvement 9: Better `find` Output Formatting
 
-```
-tools/minified-js-analyzer/
-  cli.mjs                    ← Entry point (arg parsing, command dispatch, output formatting)
-  lib/
-    state-machine.mjs        ← Core: 7-state parser (normal/string/comment/regex/template)
-    beautify.mjs             ← beautify(src) → { text, offsetMap }
-    extract-fn.mjs           ← extractFunction(src, offset) → { signature, start, end, params, ... }
-    parse.mjs                ← Shared SWC parsing: parseFile(path), parseSource(src), walkAST, collectPatternBindings
-    scope.mjs                ← buildScopeTree(ast, srcLength) → { scopes, findScopeAt(offset) }
-    trace-io.mjs             ← traceIO(src, pattern), findEnclosingFuncName(src, offset)
-    find.mjs                 ← findInFunctions(src, pattern, options) → grouped matches
-    refs.mjs                 ← findRefs(ast, src, charOffset) → external references
-    calls.mjs                ← findCalls(ast, src, charOffset) → { outgoing, incoming }
-    strings.mjs              ← collectStrings(src, options) → string index
-    patch-check.mjs          ← checkPatch(src, pattern, replacement?) → validation result
-    map.mjs                  ← buildFunctionMap(ast, src, options) → function index
-    diff-fns.mjs             ← diffFunctions(map1, map2) → { unchanged, modified, added, removed }
-    decompile.mjs            ← decompileFunction(ast, src, offset, options) → annotated source
-  tests/
-    state-machine.test.mjs
-    beautify.test.mjs
-    extract-fn.test.mjs
-    find.test.mjs
-    refs.test.mjs
-    calls.test.mjs
-    strings.test.mjs
-    patch-check.test.mjs
-    map.test.mjs
-    diff-fns.test.mjs
-    decompile.test.mjs
-  all_requirements.md        ← This file
+### Problem
+
+When `find` returns many matches (e.g., 34 matches for "queuedCommands"), the output is overwhelming. Every match shows ±80 chars of context, most of which is irrelevant. Scrolling through 34 matches to find the one I care about is slow.
+
+### What I Need
+
+**Compact mode (default for >10 matches):**
+
+```bash
+bundle-analyzer find cli.js "queuedCommands" --compact
 ```
 
-### Design Principles
+```
+Found 34 matches in 20 functions:
 
-1. **Lib modules export pure functions returning data objects.** No console output, no process.exit, no file I/O in lib modules (except `parse.mjs` which reads the input file). All formatting and output happens in `cli.mjs`.
+  char 5216666   (K)=>({...K,queuedCommands:[...K.queuedCo...   (k0)
+  char 5216803   if((await A()).queuedCommands.length===0)r...   (zO6)
+  char 5216858   if(z.queuedCommands.length===0)return z;r...   (zO6)
+  char 5217051   queuedCommands:K.queuedCommands.filter((Y...   (EU7)
+  ...
+```
 
-2. **Two parser tiers.** Commands 1, 2, 4, 5, 8, 9 use the state machine (fast, no dependencies). Commands 3, 6, 7, 10, 11, 12 use SWC (slower but precise). Users can get quick results with state-machine commands and switch to SWC commands when they need precision.
+**Filtered mode:**
 
-3. **Composable building blocks.** Higher-level commands build on lower-level ones:
-   - `find` uses `findFunctionStart` from extract-fn
-   - `refs` uses `buildScopeTree` from scope
-   - `calls` uses `parseFile` from parse + `findFunctionStart` from extract-fn
-   - `map` uses `parseFile` from parse
-   - `diff-fns` uses `buildFunctionMap` from map
-   - `decompile` uses `extractFunction` from extract-fn + `parseSource` from parse
+```bash
+bundle-analyzer find cli.js "queuedCommands" --near 5216800
+```
 
-4. **Fail informatively.** When something doesn't work (SWC can't parse, pattern not found, offset out of range), return a structured error with suggestions rather than crashing.
+Only shows matches within ±5000 chars of the given offset.
 
-### Performance Targets
+**Count mode:**
 
-| Command | Target | Notes |
-|---|---|---|
-| beautify | < 1s for 11MB | State machine, ~0.4s actual |
-| extract-fn | < 2s for 11MB | Forward scan limited to offset + 500KB |
-| find | < 2s for 11MB | State machine + indexOf |
-| strings | < 2s for 11MB | State machine scan |
-| patch-check | < 0.5s | Just indexOf + context |
-| scope | < 5s for 11MB | SWC parse (~2.5s) + walk |
-| refs | < 5s for 11MB | SWC parse + filtered walk |
-| calls | < 5s for 11MB | SWC parse + full walk |
-| map | < 10s for 11MB | SWC parse + exhaustive walk |
-| diff-fns | < 20s | Two SWC parses + matching |
-| decompile | < 5s | SWC parse of extracted function (small) |
-| trace-io | < 1s | String indexOf |
-
-### Dependency Graph
+```bash
+bundle-analyzer find cli.js "queuedCommands" --count
+```
 
 ```
-state-machine ← beautify ← extract-fn
-                              ↑
-parse ← scope ← refs         |
-  ↑      ↑                   |
-  |      └──── calls ────────┘
-  |
-  ├── map ← diff-fns
-  |
-  └── decompile (also uses extract-fn, beautify)
+Found 34 matches in 20 functions:
+  k0: 2 matches
+  zO6: 4 matches
+  EU7: 2 matches
+  ...
+```
 
-trace-io (standalone, uses findEnclosingFuncName)
-strings (standalone, uses state-machine)
-patch-check (standalone, uses state-machine)
-find (uses extract-fn)
+### Implementation Notes
+
+- `--compact`: truncate context to ~50 chars, one line per match
+- `--near N`: filter matches to those within ±5000 chars of offset N
+- `--count`: just show counts per function
+- `--limit N`: show only first N matches (with "and X more" footer)
+- These could also be `--head N` for consistency with grep-like tools
+
+---
+
+## Improvement 10: `patch-check` with Regex Support
+
+### Problem
+
+`patch-check` only supports literal string matching. But patch patterns are almost always regex (because variable names change between versions). To validate a regex pattern's uniqueness, I have to write a `node -e` script.
+
+### What I Need
+
+```bash
+bundle-analyzer patch-check cli.js \
+  'async function [\w$]+\([\w$]+,[\w$]+\)\{if\(\(await [\w$]+\(\)\)\.queuedCommands\.length===0\)return;' \
+  --regex
+```
+
+### Expected Output
+
+```
+Pattern: /async function [\w$]+\([\w$]+,[\w$]+\)\{if\(\(await [\w$]+\(\)\)\.queuedCommands\.length===0\)return;/
+
+Status: UNIQUE (1 match) ✓
+
+Match at char 5216764:
+  ...async function zO6(A,q){if((await A()).queuedCommands.length===0)return;...
+```
+
+### Implementation Notes
+
+- Simple extension to existing `patch-check.mjs`
+- When `--regex` flag is present, use `new RegExp(pattern)` instead of `src.indexOf(pattern)`
+- Combine with `%V%` expansion for convenience
+- This could be obviated by the `match` command (Improvement 6), but it's simpler and fits the existing command structure
+
+---
+
+## Priority Ranking
+
+| # | Improvement | Effort | Impact | Priority |
+|---|---|---|---|---|
+| 1 | `slice` — raw code at offset | Trivial (10 lines) | High | P0 |
+| 2 | `find --captures` — capture group extraction | Low (20 lines) | High | P0 |
+| 10 | `patch-check --regex` — regex uniqueness validation | Low (15 lines) | Medium | P1 |
+| 3 | `%V%` shorthand expansion | Trivial (1 line each in find/patch-check/match) | Medium | P1 |
+| 9 | Better `find` output (compact/near/count) | Low (30 lines) | Medium | P1 |
+| 4 | `extract-fn --depth/--stack` | Medium (50 lines) | Medium | P2 |
+| 5 | `context` — one-shot understanding | Medium (80 lines, combines existing) | Medium | P2 |
+| 6 | `match` — regex + captures + uniqueness + preview | Medium (100 lines) | High | P2 |
+| 7 | `extract-fn` for brace-less bodies | Hard (state machine changes) | Low | P3 |
+| 8 | `patch-build` — generate patch scripts | Hard (template engine) | High (for repeat use) | P3 |
+
+**Recommended implementation order:** 1 → 2 → 10 → 3 → 9 → 6 (which subsumes 2+10+3) → 4 → 5 → 8 → 7
+
+---
+
+## Appendix: Real Examples That Triggered Each Improvement
+
+### Improvement 1 (`slice`)
+
+Every time I needed to verify what code was at an offset after `find` returned a match. Happened ~15 times in one session. Example:
+
+```bash
+# What I did (every time):
+node -e "const s=require('fs').readFileSync('cli.js','utf8'); console.log(s.slice(7944591,7944891))"
+
+# What I wanted:
+bundle-analyzer slice cli.js 7944591 300
+```
+
+### Improvement 2 (`find --captures`)
+
+Needed to extract the dequeue function name and parameter names. The README says "find by pattern, extract variable names dynamically." This is the core operation of every apply.mjs.
+
+```bash
+# What I did:
+bundle-analyzer find cli.js "queuedCommands.length===0"  # find location
+# Then:
+node -e "const s=require('fs').readFileSync('cli.js','utf8'); const m=s.match(/async function ([\w\$]+)\(([\w\$]+),([\w\$]+)\)\{/); console.log(m[1],m[2],m[3])"
+
+# What I wanted:
+bundle-analyzer find cli.js 'async function (%V%)\((%V%),(%V%)\)\{.*queuedCommands' --regex --captures
+```
+
+### Improvement 4 (`extract-fn --depth`)
+
+Trying to see the Task tool's `call()` method. The offset was inside a tiny lambda, and `extract-fn` returned the lambda instead of the method.
+
+```bash
+# What I got:
+bundle-analyzer extract-fn cli.js 7944719
+# Output: (X1)=>X1+O1 — a 11-char arrow function. Useless.
+
+# What I wanted:
+bundle-analyzer extract-fn cli.js 7944719 --depth 2
+# Output: the full async call() method (8000 chars)
+```
+
+### Improvement 6 (`match`)
+
+Building the regex for each patch, I needed to iteratively test: Does this regex match exactly once? What does it capture? What does the replacement look like? Each iteration required a new `node -e` script.
+
+```bash
+# What I did (per iteration):
+node -e "
+const s=require('fs').readFileSync('cli.js','utf8');
+const re = /pattern/;
+const m = s.match(re);
+console.log('count:', (s.match(new RegExp(re.source,'g'))||[]).length);
+console.log('groups:', m?.slice(1));
+console.log('replaced:', m?.[0].replace(re, replacement));
+"
+
+# What I wanted:
+bundle-analyzer match cli.js 'pattern' --replace 'replacement'
 ```

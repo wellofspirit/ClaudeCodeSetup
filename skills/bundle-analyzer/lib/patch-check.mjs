@@ -1,26 +1,50 @@
 import { createStateMachine, advanceState, isInCode } from './state-machine.mjs';
+import { expandShorthands } from './find.mjs';
 
 // Pre-flight validation for a patch pattern.
 // Returns { status, matches[], warnings[], preview? }
-export function checkPatch(src, pattern, replacement) {
+// options: { regex: boolean }
+export function checkPatch(src, pattern, replacement, options = {}) {
   const matches = [];
-  let idx = 0;
 
-  while (true) {
-    const found = src.indexOf(pattern, idx);
-    if (found < 0) break;
+  if (options.regex) {
+    const expanded = expandShorthands(pattern);
+    const re = new RegExp(expanded, 'g');
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const ctxStart = Math.max(0, m.index - 200);
+      const ctxEnd = Math.min(src.length, m.index + m[0].length + 200);
+      const entry = {
+        offset: m.index,
+        matchText: m[0],
+        context: src.substring(ctxStart, ctxEnd),
+        contextOffset: ctxStart,
+      };
+      if (m.length > 1) {
+        entry.captures = [...m].slice(1);
+        entry.namedCaptures = m.groups || null;
+      }
+      matches.push(entry);
+    }
+  } else {
+    let idx = 0;
+    while (true) {
+      const found = src.indexOf(pattern, idx);
+      if (found < 0) break;
 
-    const ctxStart = Math.max(0, found - 200);
-    const ctxEnd = Math.min(src.length, found + pattern.length + 200);
-    const context = src.substring(ctxStart, ctxEnd);
+      const ctxStart = Math.max(0, found - 200);
+      const ctxEnd = Math.min(src.length, found + pattern.length + 200);
+      const context = src.substring(ctxStart, ctxEnd);
 
-    matches.push({
-      offset: found,
-      context,
-      contextOffset: ctxStart,
-    });
+      matches.push({
+        offset: found,
+        matchText: pattern,
+        context,
+        contextOffset: ctxStart,
+      });
 
-    idx = found + 1;
+      idx = found + 1;
+    }
   }
 
   // Determine status
@@ -55,11 +79,23 @@ export function checkPatch(src, pattern, replacement) {
   let preview = undefined;
   if (replacement !== undefined && matches.length === 1) {
     const m = matches[0];
+    const matchLen = m.matchText ? m.matchText.length : pattern.length;
     const before = src.substring(Math.max(0, m.offset - 60), m.offset);
-    const after = src.substring(m.offset + pattern.length, Math.min(src.length, m.offset + pattern.length + 60));
+    const after = src.substring(m.offset + matchLen, Math.min(src.length, m.offset + matchLen + 60));
+    const matchedText = m.matchText || pattern;
+
+    let replacedText;
+    if (options.regex) {
+      const expanded = expandShorthands(pattern);
+      const re = new RegExp(expanded);
+      replacedText = matchedText.replace(re, replacement);
+    } else {
+      replacedText = replacement;
+    }
+
     preview = {
-      before: before + pattern + after,
-      after: before + replacement + after,
+      before: before + matchedText + after,
+      after: before + replacedText + after,
     };
   }
 

@@ -91,6 +91,31 @@ export function findFunctionStart(src, offset) {
   return bestFunc ? bestFunc.sigStart : -1;
 }
 
+// Returns all enclosing functions at an offset, sorted by size (smallest = depth 0).
+export function findFunctionStack(src, offset) {
+  const stack = [];
+  let searchOffset = offset;
+
+  // Iteratively find enclosing functions by moving to just before the previous result
+  for (let i = 0; i < 20; i++) { // max 20 nesting levels
+    const start = findFunctionStart(src, searchOffset);
+    if (start < 0) break;
+
+    const sig = extractSignature(src, start);
+    // Find the end of this function to get its size
+    const fn = extractFunction(src, start + 1);
+    const end = fn.error ? -1 : fn.end;
+
+    stack.push({ sigStart: start, signature: sig, end, size: end > 0 ? end - start : -1 });
+
+    if (start === 0) break;
+    searchOffset = start - 1;
+  }
+
+  // Stack is built inner-to-outer (smallest first = depth 0)
+  return stack;
+}
+
 export function extractFunction(src, charOffset) {
   const funcStart = findFunctionStart(src, charOffset);
   if (funcStart < 0) {

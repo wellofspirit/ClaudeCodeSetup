@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "bun test",
-    "build": "bun build --compile cli.mjs --outfile bundle-analyzer",
-    "install": "./install.sh"
+    "postinstall": "./install.sh"
   },
-  "devDependencies": {
+  "dependencies": {
     "@swc/core": "^1.11.24"
   },
   "trustedDependencies": [
