@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test",
-    "postinstall": "./install.sh"
+    "test": "bun test"
   },
   "dependencies": {
     "@swc/core": "^1.11.24"

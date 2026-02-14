@@ -6,24 +6,19 @@ INSTALL_DIR="$HOME/.claude/skills/$SKILL_NAME"
 BIN_DIR="$HOME/.local/bin"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "🔧 Installing $SKILL_NAME skill to Claude Code..."
+echo "Installing $SKILL_NAME skill to Claude Code..."
 
-# Create directories if they don't exist
-mkdir -p "$HOME/.claude/skills"
+# Create directories
+mkdir -p "$INSTALL_DIR"
 mkdir -p "$BIN_DIR"
 
-# Create/update skill directory
-echo "📁 Installing skill to $INSTALL_DIR..."
-mkdir -p "$INSTALL_DIR"
-
 # Copy source files
-echo "📦 Copying source files..."
+echo "Copying source files..."
 cd "$SCRIPT_DIR"
 cp -r lib "$INSTALL_DIR/"
 cp cli.mjs "$INSTALL_DIR/"
 cp SKILL.md "$INSTALL_DIR/"
 
-# Copy lockfile if it exists
 if [ -f "bun.lock" ]; then
   cp bun.lock "$INSTALL_DIR/"
 fi
@@ -44,23 +39,23 @@ cat > "$INSTALL_DIR/package.json" << 'PKG'
 }
 PKG
 
-# Install dependencies in target directory
-echo "📦 Installing dependencies..."
+# Install dependencies
+echo "Installing dependencies..."
 cd "$INSTALL_DIR"
 bun install --production
 
-# Create wrapper script in ~/.local/bin
-echo "📝 Creating wrapper script in $BIN_DIR..."
+# Create wrapper script
+echo "Creating wrapper script..."
 cat > "$BIN_DIR/bundle-analyzer" << 'WRAPPER'
 #!/usr/bin/env bash
 exec bun "$HOME/.claude/skills/bundle-analyzer/cli.mjs" "$@"
 WRAPPER
 chmod +x "$BIN_DIR/bundle-analyzer"
 
-echo "✅ Installation complete!"
 echo ""
+echo "Installation complete!"
 echo "Wrapper script: $BIN_DIR/bundle-analyzer"
-echo "Source files and dependencies: $INSTALL_DIR"
+echo "Source files:    $INSTALL_DIR"
 echo ""
 echo "Make sure $BIN_DIR is in your PATH:"
 echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
