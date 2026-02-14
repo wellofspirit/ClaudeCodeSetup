@@ -12,3 +12,4 @@
 .claude/todos
 .claude/history.jsonl
 .claude/stats-cache.json
+node_modules
