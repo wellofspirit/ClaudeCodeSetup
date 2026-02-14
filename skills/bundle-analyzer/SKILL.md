@@ -11,6 +11,8 @@ You are analyzing a minified JavaScript bundle. Use the analyzer toolkit and fol
 
 The `bundle-analyzer` command is available in your PATH after installation.
 
+> **Windows note:** On Windows (when the shell is `bash`, e.g. Git Bash or MSYS2), you must invoke the command as **`bundle-analyzer.cmd`** — the `.cmd` extension is not auto-resolved. Replace all `bundle-analyzer` calls below with `bundle-analyzer.cmd`.
+
 ### Discovery Commands (fast, no AST — state-machine-based)
 
 ```bash

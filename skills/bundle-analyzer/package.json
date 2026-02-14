@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/postinstall.mjs",
     "test": "bun test"
   },
   "dependencies": {

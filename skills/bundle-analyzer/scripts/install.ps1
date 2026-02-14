@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $SkillName = "bundle-analyzer"
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $InstallDir = Join-Path $env:USERPROFILE ".claude\skills\$SkillName"
 $BinDir = Join-Path $env:USERPROFILE ".local\bin"
 
